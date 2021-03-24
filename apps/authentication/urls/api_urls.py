@@ -14,6 +14,11 @@ router.register('connection-token', api.UserConnectionTokenViewSet, 'connection-
 
 urlpatterns = [
     # path('token/', api.UserToken.as_view(), name='user-token'),
+    path('wecom/qr/bind/', api.WeComQRBindApi.as_view(), name='wecom-qr-bind'),
+    path('wecom/qr/login/', api.WeComQRLoginApi.as_view(), name='wecom-qr-login'),
+    path('wecom/qr/bind/<uuid:user_id>/callback/', api.WeComQRBindCallbackApi.as_view(), name='wecom-qr-bind-callback'),
+    path('wecom/qr/login/callback/', api.WeComQRLoginCallbackApi.as_view(), name='wecom-qr-login-callback'),
+
     path('auth/', api.TokenCreateApi.as_view(), name='user-auth'),
     path('tokens/', api.TokenCreateApi.as_view(), name='auth-token'),
     path('mfa/challenge/', api.MFAChallengeApi.as_view(), name='mfa-challenge'),
@@ -23,4 +28,3 @@ urlpatterns = [
 ]
 
 urlpatterns += router.urls
-

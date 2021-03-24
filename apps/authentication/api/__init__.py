@@ -7,3 +7,4 @@ from .mfa import *
 from .access_key import *
 from .login_confirm import *
 from .sso import *
+from .wecom import *
