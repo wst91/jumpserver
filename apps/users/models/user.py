@@ -579,7 +579,7 @@ class User(AuthMixin, TokenMixin, RoleMixin, MFAMixin, AbstractUser):
         auto_now_add=True, blank=True, null=True,
         verbose_name=_('Date password last updated')
     )
-    wecom_id = models.CharField(null=False, default='', db_index=True, max_length=128)
+    wecom_id = models.CharField(null=False, default='', unique=True, max_length=128)
 
     def __str__(self):
         return '{0.name}({0.username})'.format(self)

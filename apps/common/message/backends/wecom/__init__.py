@@ -219,7 +219,7 @@ class WeCom:
         errcode = data['errcode']
         if errcode == ErrorCode.INVALID_CODE:
             logger.warn(f'WeCom get_user_id_by_code invalid code: code={code}')
-            return None
+            return None, None
 
         self._check_errcode_is_0(data)
 

@@ -233,3 +233,13 @@ class PasswordRequireResetError(JMSException):
     def __init__(self, url, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.url = url
+
+
+class WeComCodeInvalid(JMSException):
+    default_code = 'wecom_code_invalid'
+    default_detail = 'Code invalid, can not get user info'
+
+
+class WeComBindAlready(JMSException):
+    default_code = 'wecom_bind_already'
+    default_detail = 'WeCom already binded'
