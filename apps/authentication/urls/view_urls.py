@@ -26,6 +26,10 @@ urlpatterns = [
     path('password/reset/success/', users_view.UserResetPasswordSuccessView.as_view(), name='reset-password-success'),
     path('password/verify/', users_view.UserVerifyPasswordView.as_view(), name='user-verify-password'),
 
+    path('wecom/bind/success-flash-msg/', views.FlashWeComBindSucceedMsgView.as_view(), name='wecom-bind-success-flash-msg'),
+    path('wecom/bind/failed-flash-msg/', views.FlashWeComBindFailedMsgView.as_view(), name='wecom-bind-failed-flash-msg'),
+    path('wecom/bind/start/', users_view.WeComEnableStartView.as_view(), name='wecom-bind-start'),
+
     # Profile
     path('profile/pubkey/generate/', users_view.UserPublicKeyGenerateView.as_view(), name='user-pubkey-generate'),
     path('profile/otp/enable/start/', users_view.UserOtpEnableStartView.as_view(), name='user-otp-enable-start'),

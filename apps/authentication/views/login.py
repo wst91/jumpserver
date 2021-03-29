@@ -19,7 +19,7 @@ from django.conf import settings
 from django.urls import reverse_lazy
 from django.contrib.auth import BACKEND_SESSION_KEY
 
-from common.utils import get_request_ip, get_object_or_none
+from common.utils import get_request_ip
 from users.utils import (
     redirect_user_first_login_or_index
 )

@@ -76,6 +76,9 @@ class DictWrapper:
     def __getattr__(self, item):
         return getattr(self._dict, item)
 
+    def __contains__(self, item):
+        return item in self._dict
+
 
 class Requests:
     """
@@ -136,7 +139,6 @@ class WeCom:
             raise WeComError
 
     def _init_access_token(self):
-        print(f'self._corpid={self._corpid}, self._corpsecret={self._corpsecret}')
         self._access_token_cache_key = digest(self._corpid, self._corpsecret)
 
         access_token = cache.get(self._access_token_cache_key)
@@ -147,7 +149,6 @@ class WeCom:
         # 缓存中没有 access_token ，去企业微信请求
         params = {'corpid': self._corpid, 'corpsecret': self._corpsecret}
         response = self._requests.get(url=URL.GET_TOKEN, params=params)
-        print(f'response', response.status_code, response.json())
         self._check_http_is_200(response)
 
         data = DictWrapper(response.json())
