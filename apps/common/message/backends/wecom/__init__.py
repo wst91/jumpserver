@@ -68,7 +68,7 @@ class DictWrapper:
     def __getitem__(self, item):
         # 企业微信返回的数据，不能完全信任，所以字典操作包在异常里
         try:
-            self._dict[item]
+            return self._dict[item]
         except KeyError as e:
             logger.error(f'WeCom response 200 but get field from json error: error={e}')
             raise WeComError
@@ -136,6 +136,7 @@ class WeCom:
             raise WeComError
 
     def _init_access_token(self):
+        print(f'self._corpid={self._corpid}, self._corpsecret={self._corpsecret}')
         self._access_token_cache_key = digest(self._corpid, self._corpsecret)
 
         access_token = cache.get(self._access_token_cache_key)
@@ -146,6 +147,7 @@ class WeCom:
         # 缓存中没有 access_token ，去企业微信请求
         params = {'corpid': self._corpid, 'corpsecret': self._corpsecret}
         response = self._requests.get(url=URL.GET_TOKEN, params=params)
+        print(f'response', response.status_code, response.json())
         self._check_http_is_200(response)
 
         data = DictWrapper(response.json())
