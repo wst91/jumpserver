@@ -15,7 +15,8 @@ from common.utils import get_logger
 from common.utils.django import reverse, get_object_or_none
 from common.message.backends.wecom import URL
 from common.message.backends.wecom import WeCom
-from authentication.errors import WeComCodeInvalid, WeComBindAlready
+from authentication import errors
+from authentication.mixins import AuthMixin
 
 logger = get_logger(__file__)
 
@@ -89,10 +90,12 @@ class WeComQRLoginApi(WeComQRMixin, APIView):
         return HttpResponseRedirect(url)
 
 
-class WeComQRLoginCallbackApi(APIView):
+class WeComQRLoginCallbackApi(AuthMixin, WeComQRMixin, APIView):
     def get(self, request: Request):
         code = request.query_params.get('code')
         state = request.query_params.get('state')
+        referer = request.query_params.get('referer')
+        login_url = reverse('authentication:login')
 
         wecom = WeCom(
             corpid=settings.WECOM_CORPID,
@@ -101,12 +104,22 @@ class WeComQRLoginCallbackApi(APIView):
         )
         wecom_userid, _ = wecom.get_user_id_by_code(code)
         if not wecom_userid:
-            raise WeComCodeInvalid
+            # 正常流程不会出这个错误，hack 行为
+            msg = _('Failed to get user from WeCom')
+            response = self.get_failed_reponse(login_url, title=msg, msg=msg)
+            return response
 
         user = get_object_or_none(User, wecom_id=wecom_userid)
         if user is None:
-            logger.error(f'WeComQR bind callback error, wecom_id invalid: wecom_id={wecom_userid}')
-            raise JMSObjectDoesNotExist(code='user_not_exist')
+            title = _('WeCom has no bound user')
+            msg = _('Please login with a password and then bind the WoCom')
+            response = self.get_failed_reponse(login_url, title=title, msg=msg)
+            return response
+
+        try:
+            self.check_wecom_auth(user)
+        except errors.AuthFailedError as e:
+            pass
 
         logger(user)
 

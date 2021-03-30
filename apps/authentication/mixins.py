@@ -111,11 +111,7 @@ class AuthMixin:
         ip = ip or get_request_ip(self.request)
         return ip
 
-    def check_is_block(self, raise_exception=True):
-        if hasattr(self.request, 'data'):
-            username = self.request.data.get("username")
-        else:
-            username = self.request.POST.get("username")
+    def _check_is_block(self, username, raise_exception=True):
         ip = self.get_request_ip()
         if is_block_login(username, ip):
             logger.warn('Ip was blocked' + ': ' + username + ':' + ip)
@@ -124,6 +120,13 @@ class AuthMixin:
                 raise errors.BlockLoginError(username=username, ip=ip)
             else:
                 return exception
+
+    def check_is_block(self, raise_exception=True):
+        if hasattr(self.request, 'data'):
+            username = self.request.data.get("username")
+        else:
+            username = self.request.POST.get("username")
+        self._check_is_block(username, raise_exception)
 
     def decrypt_passwd(self, raw_passwd):
         # 获取解密密钥，对密码进行解密
@@ -202,6 +205,18 @@ class AuthMixin:
         request.session['user_id'] = str(user.id)
         request.session['auto_login'] = auto_login
         request.session['auth_backend'] = getattr(user, 'backend', settings.AUTH_BACKEND_MODEL)
+        return user
+
+    def check_wecom_auth(self, user: User):
+        ip = self.get_request_ip()
+        request = self.request
+
+        self._check_is_block(user.username)
+        self._check_login_acl(user, ip)
+
+        clean_failed_count(user.username, ip)
+        request.session['user_id'] = str(user.id)
+        request.session['auth_backend'] = 'authentication.backends.api.WeComAuthentication'
         return user
 
     @classmethod
