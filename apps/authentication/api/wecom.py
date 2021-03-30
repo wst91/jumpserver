@@ -10,7 +10,6 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from users.utils import is_auth_password_time_valid
 from users.models import User
-from common.exceptions import JMSObjectDoesNotExist
 from common.utils import get_logger
 from common.utils.django import reverse, get_object_or_none
 from common.message.backends.wecom import URL
@@ -24,8 +23,8 @@ logger = get_logger(__file__)
 class WeComQRMixin:
     def get_qr_url(self, redirect_uri):
         params = {
-            'appid': 'ww918354e3468dc0cc',
-            'agentid': '1000002',
+            'appid': settings.WECOM_CORPID,
+            'agentid': settings.WECOM_AGENTID,
             'redirect_uri': redirect_uri
         }
         url = URL.QR_CONNECT + '?' + urllib.parse.urlencode(params)
