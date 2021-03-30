@@ -14,7 +14,7 @@ class WeComEnableStartView(UserVerifyPasswordView):
         success_url = reverse('api-auth:wecom-qr-bind')
 
         success_url += '?' + urllib.parse.urlencode({
-            'referer': next_url or referer
+            'redirect_url': next_url or referer
         })
 
         return success_url

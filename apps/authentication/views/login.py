@@ -4,7 +4,6 @@
 from __future__ import unicode_literals
 import os
 import datetime
-from django.core.cache import cache
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.http import HttpResponse
 from django.shortcuts import reverse, redirect
@@ -19,7 +18,6 @@ from django.conf import settings
 from django.urls import reverse_lazy
 from django.contrib.auth import BACKEND_SESSION_KEY
 
-from common.utils import get_request_ip
 from users.utils import (
     redirect_user_first_login_or_index
 )

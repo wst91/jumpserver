@@ -11,6 +11,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from users.utils import is_auth_password_time_valid
 from users.models import User
 from common.utils import get_logger
+from common.utils.random import random_string
 from common.utils.django import reverse, get_object_or_none
 from common.message.backends.wecom import URL
 from common.message.backends.wecom import WeCom
@@ -20,12 +21,30 @@ from authentication.mixins import AuthMixin
 logger = get_logger(__file__)
 
 
-class WeComQRMixin:
+WECOM_STATE_SESSION_KEY = '_wecom_state'
+
+
+class WeComQRMixin(APIView):
+    def verify_state(self):
+        state = self.request.query_params.get('state')
+        session_state = self.request.session.get(WECOM_STATE_SESSION_KEY)
+        if state != session_state:
+            return False
+        return True
+
+    def get_verify_state_failed_response(self, redirect_uri):
+        msg = _("You've been hacked")
+        return self.get_failed_reponse(redirect_uri, msg, msg)
+
     def get_qr_url(self, redirect_uri):
+        state = random_string(16)
+        self.request.session[WECOM_STATE_SESSION_KEY] = state
+
         params = {
             'appid': settings.WECOM_CORPID,
             'agentid': settings.WECOM_AGENTID,
-            'redirect_uri': redirect_uri
+            'state': state,
+            'redirect_uri': redirect_uri,
         }
         url = URL.QR_CONNECT + '?' + urllib.parse.urlencode(params)
         return url
@@ -52,26 +71,28 @@ class WeComQRMixin:
         })
         return HttpResponseRedirect(failed_flash_msg_url)
 
+    def get_already_bound_response(self, redirect_url):
+        msg = _('WeCom is already bound')
+        response = self.get_failed_reponse(redirect_url, msg, msg)
+        return response
+
 
 class WeComQRBindApi(WeComQRMixin, APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request: Request):
         user = request.user
-        referer = request.query_params.get('referer')
-
-        # if user.wecom_id:
-        #     raise WeComBindAlready
+        redirect_url = request.query_params.get('redirect_url')
 
         if not is_auth_password_time_valid(request.session):
             bind_start = reverse('authentication:wecom-bind-start')
             bind_start += '?' + urllib.parse.urlencode({
-                'next': referer
+                'next': redirect_url
             })
             return HttpResponseRedirect(bind_start)
 
         redirect_uri = reverse('api-auth:wecom-qr-bind-callback', kwargs={'user_id': user.id}, external=True)
-        redirect_uri += '?' + urllib.parse.urlencode({'referer': referer})
+        redirect_uri += '?' + urllib.parse.urlencode({'redirect_url': redirect_url})
 
         url = self.get_qr_url(redirect_uri)
         return HttpResponseRedirect(url)
@@ -95,9 +116,11 @@ class WeComQRLoginCallbackApi(AuthMixin, WeComQRMixin, APIView):
 
     def get(self, request: Request):
         code = request.query_params.get('code')
-        state = request.query_params.get('state')
-        referer = request.query_params.get('referer')
+        redirect_url = request.query_params.get('redirect_url')
         login_url = reverse('authentication:login')
+
+        if not self.verify_state():
+            return self.get_verify_state_failed_response(redirect_url)
 
         wecom = WeCom(
             corpid=settings.WECOM_CORPID,
@@ -133,19 +156,20 @@ class WeComQRBindCallbackApi(WeComQRMixin, APIView):
 
     def get(self, request: Request, user_id):
         code = request.query_params.get('code')
-        state = request.query_params.get('state')
-        referer = request.query_params.get('referer')
+        redirect_url = request.query_params.get('redirect_url')
+
+        if not self.verify_state():
+            return self.get_verify_state_failed_response(redirect_url)
 
         user = get_object_or_none(User, id=user_id)
         if user is None:
             logger.error(f'WeComQR bind callback error, user_id invalid: user_id={user_id}')
             msg = _('Invalid user_id')
-            response = self.get_failed_reponse(referer, msg, msg)
+            response = self.get_failed_reponse(redirect_url, msg, msg)
             return response
 
         if user.wecom_id:
-            msg = _('WeCom is already bound')
-            response = self.get_failed_reponse(referer, msg, msg)
+            response = self.get_already_bound_response(redirect_url)
             return response
 
         wecom = WeCom(
@@ -156,12 +180,12 @@ class WeComQRBindCallbackApi(WeComQRMixin, APIView):
         wecom_userid, __ = wecom.get_user_id_by_code(code)
         if not wecom_userid:
             msg = _('WeCom query user failed')
-            response = self.get_failed_reponse(referer, msg, msg)
+            response = self.get_failed_reponse(redirect_url, msg, msg)
             return response
 
         user.wecom_id = wecom_userid
         user.save()
 
         msg = _('Binding WeCom successfully')
-        response = self.get_success_reponse(referer, msg, msg)
+        response = self.get_success_reponse(redirect_url, msg, msg)
         return response
