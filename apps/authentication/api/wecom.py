@@ -80,9 +80,13 @@ class WeComQRBindApi(WeComQRMixin, APIView):
 class WeComQRLoginApi(WeComQRMixin, APIView):
 
     def get(self,  request: Request):
+        referer = request.query_params.get('referer')
+
         redirect_uri = reverse('api-auth:wecom-qr-login-callback', external=True)
-        response = self.get_qr_url_response(redirect_uri)
-        return response
+        redirect_uri += '?' + urllib.parse.urlencode({'referer': referer})
+
+        url = self.get_qr_url_response(redirect_uri)
+        return HttpResponseRedirect(url)
 
 
 class WeComQRLoginCallbackApi(APIView):
@@ -145,16 +149,3 @@ class WeComQRBindCallbackApi(WeComQRMixin, APIView):
         msg = _('Binding WeCom successfully')
         response = self.get_success_reponse(referer, msg, msg)
         return response
-
-
-def init(corpsecret):
-    from settings.models import Setting
-
-    value = {
-        'corpid': 'ww918354e3468dc0cc',
-        'agentid': '1000002',
-        'corpsecret': corpsecret
-    }
-    Setting.update_or_create('WECOM_CORPID', value='ww918354e3468dc0cc', encrypted=False)
-    Setting.update_or_create('WECOM_AGENTID', value='1000002', encrypted=False)
-    Setting.update_or_create('WECOM_CORPSECRET', value=corpsecret, encrypted=True)
