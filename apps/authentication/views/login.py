@@ -39,7 +39,6 @@ __all__ = [
 @method_decorator(csrf_protect, name='dispatch')
 @method_decorator(never_cache, name='dispatch')
 class UserLoginView(mixins.AuthMixin, FormView):
-    key_prefix_captcha = "_LOGIN_INVALID_{}"
     redirect_field_name = 'next'
     template_name = 'authentication/login.html'
 
@@ -61,10 +60,9 @@ class UserLoginView(mixins.AuthMixin, FormView):
         try:
             self.check_user_auth(decrypt_passwd=True)
         except errors.AuthFailedError as e:
-            e = self.check_is_block(raise_exception=False) or e
             form.add_error(None, e.msg)
-            ip = self.get_request_ip()
-            cache.set(self.key_prefix_captcha.format(ip), 1, 3600)
+            self.set_login_failed_mark()
+
             form_cls = get_user_login_form_cls(captcha=True)
             new_form = form_cls(data=form.data)
             new_form._errors = form.errors
@@ -75,16 +73,8 @@ class UserLoginView(mixins.AuthMixin, FormView):
         self.clear_rsa_key()
         return self.redirect_to_guard_view()
 
-    def redirect_to_guard_view(self):
-        guard_url = reverse('authentication:login-guard')
-        args = self.request.META.get('QUERY_STRING', '')
-        if args:
-            guard_url = "%s?%s" % (guard_url, args)
-        return redirect(guard_url)
-
     def get_form_class(self):
-        ip = get_request_ip(self.request)
-        if cache.get(self.key_prefix_captcha.format(ip)):
+        if self.check_is_need_captcha():
             return get_user_login_form_cls(captcha=True)
         else:
             return get_user_login_form_cls()

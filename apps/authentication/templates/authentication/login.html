@@ -196,8 +196,12 @@
                                         <i class="fa"><img src="{{ LOGIN_CAS_LOGO_URL }}" height="13" width="13"></i> {% trans 'CAS' %}
                                     </a>
                                 {% endif %}
+
                             </div>
                         {% else %}
+                            <a href="{% url 'api-auth:wecom-qr-login' %}" class="more-login-item">
+                                        <i class="fa fa-openid"></i> {% trans 'WeCom' %}
+                                    </a>
                             <div class="text-center" style="display: inline-block;">
                         {% endif %}
                         </div>

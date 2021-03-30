@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework.views import APIView
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from users.utils import is_auth_password_time_valid
 from users.models import User
@@ -79,6 +79,7 @@ class WeComQRBindApi(WeComQRMixin, APIView):
 
 
 class WeComQRLoginApi(WeComQRMixin, APIView):
+    permission_classes = (AllowAny,)
 
     def get(self,  request: Request):
         referer = request.query_params.get('referer')
@@ -86,11 +87,13 @@ class WeComQRLoginApi(WeComQRMixin, APIView):
         redirect_uri = reverse('api-auth:wecom-qr-login-callback', external=True)
         redirect_uri += '?' + urllib.parse.urlencode({'referer': referer})
 
-        url = self.get_qr_url_response(redirect_uri)
+        url = self.get_qr_url(redirect_uri)
         return HttpResponseRedirect(url)
 
 
 class WeComQRLoginCallbackApi(AuthMixin, WeComQRMixin, APIView):
+    permission_classes = (AllowAny,)
+
     def get(self, request: Request):
         code = request.query_params.get('code')
         state = request.query_params.get('state')
@@ -119,11 +122,12 @@ class WeComQRLoginCallbackApi(AuthMixin, WeComQRMixin, APIView):
         try:
             self.check_wecom_auth(user)
         except errors.AuthFailedError as e:
-            pass
+            self.set_login_failed_mark()
+            msg = e.msg
+            response = self.get_failed_reponse(login_url, title=msg, msg=msg)
+            return response
 
-        logger(user)
-
-        return Response()
+        return self.redirect_to_guard_view()
 
 
 class WeComQRBindCallbackApi(WeComQRMixin, APIView):

@@ -5,13 +5,14 @@ from urllib.parse import urlencode
 from functools import partial
 import time
 
+from django.core.cache import cache
 from django.conf import settings
 from django.contrib import auth
 from django.contrib.auth import (
     BACKEND_SESSION_KEY, _get_backends,
     PermissionDenied, user_login_failed, _clean_credentials
 )
-from django.shortcuts import reverse
+from django.shortcuts import reverse, redirect
 
 from common.utils import get_object_or_none, get_request_ip, get_logger, bulk_get
 from users.models import User
@@ -82,6 +83,8 @@ auth.authenticate = authenticate
 class AuthMixin:
     request = None
     partial_credential_error = None
+
+    key_prefix_captcha = "_LOGIN_INVALID_{}"
 
     def get_user_from_session(self):
         if self.request.session.is_empty():
@@ -188,6 +191,16 @@ class AuthMixin:
         if not is_allowed:
             raise self.raise_credential_error(error=errors.reason_acl_not_allow)
 
+    def set_login_failed_mark(self):
+        ip = self.get_request_ip()
+        cache.set(self.key_prefix_captcha.format(ip), 1, 3600)
+
+    def check_is_need_captcha(self):
+        # 最近有登录失败时需要填写验证码
+        ip = get_request_ip(self.request)
+        need = cache.get(self.key_prefix_captcha.format(ip))
+        return need
+
     def check_user_auth(self, decrypt_passwd=False):
         self.check_is_block()
         request = self.request
@@ -215,6 +228,8 @@ class AuthMixin:
         self._check_login_acl(user, ip)
 
         clean_failed_count(user.username, ip)
+
+        request.session['auth_password'] = 1
         request.session['user_id'] = str(user.id)
         request.session['auth_backend'] = 'authentication.backends.api.WeComAuthentication'
         return user
@@ -343,3 +358,10 @@ class AuthMixin:
                 sender=self.__class__, username=username,
                 request=self.request, reason=reason
             )
+
+    def redirect_to_guard_view(self):
+        guard_url = reverse('authentication:login-guard')
+        args = self.request.META.get('QUERY_STRING', '')
+        if args:
+            guard_url = "%s?%s" % (guard_url, args)
+        return redirect(guard_url)
