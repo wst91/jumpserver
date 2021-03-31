@@ -44,6 +44,7 @@ class AuthBackendLabelMapping(LazyObject):
                 backend_label_mapping[backend] = source.label
         backend_label_mapping[settings.AUTH_BACKEND_PUBKEY] = _('SSH Key')
         backend_label_mapping[settings.AUTH_BACKEND_MODEL] = _('Password')
+        backend_label_mapping[settings.AUTH_BACKEND_WECOM] = _('WeCom')
         return backend_label_mapping
 
     def _setup(self):

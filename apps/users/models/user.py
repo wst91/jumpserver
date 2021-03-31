@@ -516,7 +516,7 @@ class User(AuthMixin, TokenMixin, RoleMixin, MFAMixin, AbstractUser):
         cas = 'cas', 'CAS'
 
     SOURCE_BACKEND_MAPPING = {
-        Source.local: [settings.AUTH_BACKEND_MODEL, settings.AUTH_BACKEND_PUBKEY],
+        Source.local: [settings.AUTH_BACKEND_MODEL, settings.AUTH_BACKEND_PUBKEY, settings.AUTH_BACKEND_WECOM],
         Source.ldap: [settings.AUTH_BACKEND_LDAP],
         Source.openid: [settings.AUTH_BACKEND_OIDC_PASSWORD, settings.AUTH_BACKEND_OIDC_CODE],
         Source.radius: [settings.AUTH_BACKEND_RADIUS],
