@@ -19,7 +19,6 @@ from common.utils.django import reverse, get_object_or_none
 from common.message.backends.wecom import URL
 from common.message.backends.wecom import WeCom
 from common.mixins.views import PermissionsMixin
-from common.permissions import IsOrgAdmin
 from authentication import errors
 from authentication.mixins import AuthMixin
 
