@@ -243,3 +243,8 @@ class WeComCodeInvalid(JMSException):
 class WeComBindAlready(JMSException):
     default_code = 'wecom_bind_already'
     default_detail = 'WeCom already binded'
+
+
+class WeComNotBound(JMSException):
+    default_code = 'wecom_not_bound'
+    default_detail = 'WeCom is not bound'

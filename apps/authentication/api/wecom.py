@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.exceptions import PermissionDenied
 
 from users.utils import is_auth_password_time_valid
 from users.models import User
@@ -15,6 +16,8 @@ from common.utils.random import random_string
 from common.utils.django import reverse, get_object_or_none
 from common.message.backends.wecom import URL
 from common.message.backends.wecom import WeCom
+from common.permissions import IsOrgAdmin
+from common.mixins.api import RoleUserMixin, RoleAdminMixin
 from authentication import errors
 from authentication.mixins import AuthMixin
 
@@ -98,6 +101,31 @@ class WeComQRBindApi(WeComQRMixin, APIView):
         return HttpResponseRedirect(url)
 
 
+class WeComQRUnBindBase(WeComQRMixin, APIView):
+    user: User
+
+    def post(self, request: Request):
+        if not is_auth_password_time_valid(request.session):
+            raise PermissionDenied
+
+        user = self.user
+
+        if not user.wecom_id:
+            raise errors.WeComNotBound
+
+        user.wecom_id = ''
+        user.save()
+        return Response()
+
+
+class WeComQRUnBindForUserApi(RoleUserMixin, WeComQRUnBindBase):
+    permission_classes = (IsAuthenticated,)
+
+
+class WeComQRUnBindForAdminApi(RoleAdminMixin, WeComQRUnBindBase):
+    permission_classes = (IsOrgAdmin,)
+
+
 class WeComQRLoginApi(WeComQRMixin, APIView):
     permission_classes = (AllowAny,)
 
@@ -127,7 +155,7 @@ class WeComQRLoginCallbackApi(AuthMixin, WeComQRMixin, APIView):
             corpsecret=settings.WECOM_CORPSECRET,
             agentid=settings.WECOM_AGENTID
         )
-        wecom_userid, _ = wecom.get_user_id_by_code(code)
+        wecom_userid, __ = wecom.get_user_id_by_code(code)
         if not wecom_userid:
             # 正常流程不会出这个错误，hack 行为
             msg = _('Failed to get user from WeCom')
@@ -136,7 +164,7 @@ class WeComQRLoginCallbackApi(AuthMixin, WeComQRMixin, APIView):
 
         user = get_object_or_none(User, wecom_id=wecom_userid)
         if user is None:
-            title = _('WeCom has no bound user')
+            title = _('WeCom is not bound')
             msg = _('Please login with a password and then bind the WoCom')
             response = self.get_failed_reponse(login_url, title=title, msg=msg)
             return response
@@ -153,6 +181,7 @@ class WeComQRLoginCallbackApi(AuthMixin, WeComQRMixin, APIView):
 
 
 class WeComQRBindCallbackApi(WeComQRMixin, APIView):
+    permission_classes = (IsAuthenticated,)
 
     def get(self, request: Request, user_id):
         code = request.query_params.get('code')
