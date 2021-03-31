@@ -14,10 +14,6 @@ router.register('connection-token', api.UserConnectionTokenViewSet, 'connection-
 
 urlpatterns = [
     # path('token/', api.UserToken.as_view(), name='user-token'),
-    path('wecom/qr/bind/', api.WeComQRBindApi.as_view(), name='wecom-qr-bind'),
-    path('wecom/qr/login/', api.WeComQRLoginApi.as_view(), name='wecom-qr-login'),
-    path('wecom/qr/bind/<uuid:user_id>/callback/', api.WeComQRBindCallbackApi.as_view(), name='wecom-qr-bind-callback'),
-    path('wecom/qr/login/callback/', api.WeComQRLoginCallbackApi.as_view(), name='wecom-qr-login-callback'),
     path('wecom/qr/unbind/', api.WeComQRUnBindForUserApi.as_view(), name='wecom-qr-unbind'),
     path('wecom/qr/unbind/<uuid:user_id>/', api.WeComQRUnBindForAdminApi.as_view(), name='wecom-qr-unbind-for-admin'),
 
