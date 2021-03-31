@@ -88,11 +88,9 @@ class WeComQRBindApi(WeComQRMixin, APIView):
         redirect_url = request.query_params.get('redirect_url')
 
         if not is_auth_password_time_valid(request.session):
-            bind_start = reverse('authentication:wecom-bind-start')
-            bind_start += '?' + urllib.parse.urlencode({
-                'next': redirect_url
-            })
-            return HttpResponseRedirect(bind_start)
+            msg = _('Please verify your password first')
+            response = self.get_failed_reponse(redirect_url, msg, msg)
+            return response
 
         redirect_uri = reverse('api-auth:wecom-qr-bind-callback', kwargs={'user_id': user.id}, external=True)
         redirect_uri += '?' + urllib.parse.urlencode({'redirect_url': redirect_url})
