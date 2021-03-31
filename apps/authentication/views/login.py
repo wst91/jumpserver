@@ -100,6 +100,7 @@ class UserLoginView(mixins.AuthMixin, FormView):
             'demo_mode': os.environ.get("DEMO_MODE"),
             'AUTH_OPENID': settings.AUTH_OPENID,
             'AUTH_CAS': settings.AUTH_CAS,
+            'AUTH_WECOM': settings.AUTH_WECOM,
             'rsa_public_key': rsa_public_key,
             'forgot_password_url': forgot_password_url
         }
