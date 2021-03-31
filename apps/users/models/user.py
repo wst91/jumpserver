@@ -584,6 +584,10 @@ class User(AuthMixin, TokenMixin, RoleMixin, MFAMixin, AbstractUser):
     def __str__(self):
         return '{0.name}({0.username})'.format(self)
 
+    @property
+    def is_wecom_bound(self):
+        return bool(self.wecom_id)
+
     def get_absolute_url(self):
         return reverse('users:user-detail', args=(self.id,))
 
