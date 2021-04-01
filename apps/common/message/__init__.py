@@ -54,10 +54,11 @@ class Message:
 
             failed_users_mapper[backend] = invalid_users
 
+        return failed_users_mapper
 
-    def get_default_msg(self):
+    def get_default_msg(self, data):
         pass
 
-    def get_wecom_msg(self):
+    def get_wecom_msg(self, data):
         raise NotImplementedError
 
