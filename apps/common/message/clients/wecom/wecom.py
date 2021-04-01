@@ -1,9 +1,9 @@
 from django.conf import settings
 
-from ..backends.wecom import WeCom
+from common.message.backends.wecom import WeCom
 
 
-class Client:
+class WeCom:
     def __init__(self):
         self.wecom = WeCom(
             corpid=settings.WECOM_CORPID,
