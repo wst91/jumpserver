@@ -2,11 +2,12 @@ from typing import Iterable
 from enum import Enum
 from collections import defaultdict
 
-from .clients import WeCom
+from .clients import WeCom, Email
 
 
 class BackendEnum(Enum):
     WECOM = WeCom
+    EMAIL = Email
 
 
 class UserUtils:
@@ -14,11 +15,11 @@ class UserUtils:
         self._users = users
 
     def get_users(self, type_lower_name):
-        method_name = f'get_{type_lower_name}_users'
+        method_name = f'get_{type_lower_name}_accounts'
         method = getattr(self, method_name)
         return method()
 
-    def get_wecom_users(self):
+    def get_wecom_accounts(self):
         users = []
         unbound_users = []
         wecomid_user_mapper = {}
@@ -31,8 +32,14 @@ class UserUtils:
                 unbound_users.append(user)
         return users, unbound_users, wecomid_user_mapper
 
+    def get_email_accounts(self):
+        pass
+
 
 class Message:
+
+    def publish(self, data: dict):
+        pass
 
     def send_msg(self, data: dict, users: Iterable, backends: Iterable = BackendEnum):
         user_utils = UserUtils(users)
@@ -62,3 +69,5 @@ class Message:
     def get_wecom_msg(self, data):
         raise NotImplementedError
 
+    def get_email_msg(self, data):
+        raise NotImplementedError
