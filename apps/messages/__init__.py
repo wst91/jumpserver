@@ -1,14 +1,27 @@
 from typing import Iterable
-from enum import Enum
 from collections import defaultdict
+
+from django.db.models import TextChoices
+from django.utils.translation import gettext_lazy as _
 
 from .backends.wecom import WeCom
 from .backends.email import Email
+from .models import Subscription
 
 
-class BackendEnum(Enum):
-    WECOM = WeCom
-    EMAIL = Email
+class BackendChoices(TextChoices):
+    WECOM = 'wecom', _('WeCom')
+    EMAIL = 'email', _('Email')
+
+    client_mapper = {
+        WECOM: WeCom,
+        EMAIL: Email
+    }
+
+    @property
+    def client(self):
+        client = self.client_mapper[self]
+        return client
 
 
 class UserUtils:
@@ -39,15 +52,22 @@ class UserUtils:
 
 class Message:
 
-    def publish(self, data: dict):
-        pass
+    app_name: str
+    message: str
 
-    def send_msg(self, data: dict, users: Iterable, backends: Iterable = BackendEnum):
+    def publish(self, data: dict):
+        backend_user_mapper = defaultdict(list)
+        subscriptions = Subscription.objects.filter(
+            app_name=self.app_name,
+            message=self.message
+        ).prefetch_related('user')
+
+    def send_msg(self, data: dict, users: Iterable, backends: Iterable = BackendChoices):
         user_utils = UserUtils(users)
         failed_users_mapper = defaultdict(list)
 
         for backend in backends:
-            backend: BackendEnum
+            backend: BackendChoices
 
             lower_name = backend.name.lower()
             user_accounts, invalid_users, account_user_mapper = user_utils.get_users(lower_name)
