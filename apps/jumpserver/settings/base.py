@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'tickets.apps.TicketsConfig',
     'acls.apps.AclsConfig',
     'common.apps.CommonConfig',
+    'notifications.apps.NotificationsConfig',
     'jms_oidc_rp',
     'rest_framework',
     'rest_framework_swagger',

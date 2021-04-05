@@ -60,21 +60,28 @@ class Message:
         subscriptions = Subscription.objects.filter(
             app_name=self.app_name,
             message=self.message
-        ).prefetch_related('user')
+        ).prefetch_related('users', 'groups__users')
+
+        for subscription in subscriptions:
+            for backend in subscription.receive_backends:
+                backend_user_mapper[backend].extend(subscription.users.all())
+                backend_user_mapper[backend].extend(subscription.groups.all())
+
+        for backend, users in backend_user_mapper.items():
+            self.send_msg(data, users, [backend])
 
     def send_msg(self, data: dict, users: Iterable, backends: Iterable = BackendChoices):
         user_utils = UserUtils(users)
         failed_users_mapper = defaultdict(list)
 
         for backend in backends:
-            backend: BackendChoices
+            backend = BackendChoices(backend)
 
-            lower_name = backend.name.lower()
-            user_accounts, invalid_users, account_user_mapper = user_utils.get_users(lower_name)
-            get_msg_method_name = f'get_{lower_name}_msg'
+            user_accounts, invalid_users, account_user_mapper = user_utils.get_users(backend)
+            get_msg_method_name = f'get_{backend}_msg'
             get_msg_method = getattr(self, get_msg_method_name, self.get_default_msg)
             msg = get_msg_method(data)
-            client = backend.value()
+            client = backend.client()
             failed_users = client.send_msg(user_accounts, **msg)
 
             for u in failed_users:
