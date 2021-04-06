@@ -1,9 +1,10 @@
 from rest_framework import serializers
 
+from orgs.mixins.serializers import BulkOrgResourceModelSerializer
 from .models import Subscription
 
 
-class SubscriptionSerializer(serializers.ModelSerializer):
+class SubscriptionSerializer(BulkOrgResourceModelSerializer):
     receive_backends = serializers.ListField(child=serializers.CharField())
 
     class Meta:
