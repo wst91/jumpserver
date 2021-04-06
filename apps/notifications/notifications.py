@@ -9,7 +9,7 @@ from .backends.email import Email
 from .models import Subscription
 
 
-class BackendChoices(TextChoices):
+class Backends(TextChoices):
     WECOM = 'wecom', _('WeCom')
     EMAIL = 'email', _('Email')
 
@@ -28,29 +28,46 @@ class UserUtils:
     def __init__(self, users):
         self._users = users
 
-    def get_users(self, type_lower_name):
-        method_name = f'get_{type_lower_name}_accounts'
+    def get_users(self, backend_name):
+        method_name = f'get_{backend_name}_accounts'
         method = getattr(self, method_name)
         return method()
 
     def get_wecom_accounts(self):
-        users = []
+        return self.get_accounts_on_model_fields('wecom_id')
+
+    def get_accounts_on_model_fields(self, field_name):
+        accounts = []
         unbound_users = []
-        wecomid_user_mapper = {}
+        account_user_mapper = {}
 
         for user in self._users:
-            if user.wecom_id:
-                wecomid_user_mapper[user.wecom_id] = user
-                users.append(user.wecom_id)
+            account = getattr(user, field_name, None)
+            if account:
+                account_user_mapper[account] = user
+                accounts.append(account)
             else:
                 unbound_users.append(user)
-        return users, unbound_users, wecomid_user_mapper
+        return accounts, unbound_users, account_user_mapper
 
     def get_email_accounts(self):
-        pass
+        return self.get_accounts_on_model_fields('email')
 
 
-class Message:
+messages = defaultdict(list)
+
+
+class MessageType(type):
+    def __new__(cls, name, bases, attrs: dict):
+        if 'app_name' in attrs and 'message' in attrs:
+            app_name = attrs['app_name']
+            message = attrs['message']
+            messages[app_name].append(message)
+        clz = type.__new__(cls, name, bases, attrs)
+        return clz
+
+
+class Message(metaclass=MessageType):
 
     app_name: str
     message: str
@@ -70,7 +87,7 @@ class Message:
         for backend, users in backend_user_mapper.items():
             self.send_msg(data, users, [backend])
 
-    def send_msg(self, data: dict, users: Iterable, backends: Iterable = BackendChoices):
+    def send_msg(self, data: dict, users: Iterable, backends: Iterable = Backends):
         user_utils = UserUtils(users)
         failed_users_mapper = defaultdict(list)
 

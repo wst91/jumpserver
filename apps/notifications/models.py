@@ -1,3 +1,5 @@
+from typing import List
+
 from django.db import models
 
 from orgs.mixins.models import OrgModelMixin
@@ -11,7 +13,7 @@ class Subscription(OrgModelMixin, models.Model):
     receive_backends_str = models.CharField(max_length=256, default='')
 
     @property
-    def receive_backends(self):
+    def receive_backends(self) -> List:
         backends = self.receive_backends_str.split('|')
         return backends
 

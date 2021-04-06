@@ -8,4 +8,5 @@ class TerminalConfig(AppConfig):
 
     def ready(self):
         from . import signals_handler
+        from . import notifications
         return super().ready()
