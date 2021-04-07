@@ -140,6 +140,7 @@ class SettingsApi(generics.RetrieveUpdateAPIView):
         'ldap': serializers.LDAPSettingSerializer,
         'email': serializers.EmailSettingSerializer,
         'email_content': serializers.EmailContentSettingSerializer,
+        'wecom': serializers.WeComSettingSerializer,
     }
 
     def get_serializer_class(self):
