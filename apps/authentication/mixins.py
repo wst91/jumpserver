@@ -198,6 +198,11 @@ class AuthMixin:
         ip = self.get_request_ip()
         cache.set(self.key_prefix_captcha.format(ip), 1, 3600)
 
+    def set_passwd_verify_on_session(self, user: User):
+        self.request.session['user_id'] = str(user.id)
+        self.request.session['auth_password'] = 1
+        self.request.session['auth_password_expired_at'] = time.time() + settings.AUTH_EXPIRED_SECONDS
+
     def check_is_need_captcha(self):
         # 最近有登录失败时需要填写验证码
         ip = get_request_ip(self.request)

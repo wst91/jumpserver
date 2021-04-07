@@ -250,3 +250,8 @@ class WeComBindAlready(JMSException):
 class WeComNotBound(JMSException):
     default_code = 'wecom_not_bound'
     default_detail = 'WeCom is not bound'
+
+
+class PasswdInvalid(JMSException):
+    default_code = 'passwd_invalid'
+    default_detail = _('Your password is invalid')

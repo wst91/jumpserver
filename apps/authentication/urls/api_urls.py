@@ -21,6 +21,7 @@ urlpatterns = [
     path('tokens/', api.TokenCreateApi.as_view(), name='auth-token'),
     path('mfa/challenge/', api.MFAChallengeApi.as_view(), name='mfa-challenge'),
     path('otp/verify/', api.UserOtpVerifyApi.as_view(), name='user-otp-verify'),
+    path('password/verify/', api.UserPasswordVerifyApi.as_view(), name='user-password-verify'),
     path('login-confirm-ticket/status/', api.TicketStatusApi.as_view(), name='login-confirm-ticket-status'),
     path('login-confirm-settings/<uuid:user_id>/', api.LoginConfirmSettingUpdateApi.as_view(), name='login-confirm-setting-update')
 ]
