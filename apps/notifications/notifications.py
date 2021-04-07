@@ -92,7 +92,7 @@ class Message(metaclass=MessageType):
         failed_users_mapper = defaultdict(list)
 
         for backend in backends:
-            backend = BackendChoices(backend)
+            backend = Backends(backend)
 
             user_accounts, invalid_users, account_user_mapper = user_utils.get_users(backend)
             get_msg_method_name = f'get_{backend}_msg'

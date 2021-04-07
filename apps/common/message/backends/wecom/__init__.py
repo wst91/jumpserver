@@ -40,6 +40,8 @@ class ErrorCode:
     # https://open.work.weixin.qq.com/api/doc/90000/90135/91437
     INVALID_CODE = 40029
 
+    INVALID_TOKEN = 40014  # 无效的 access_token
+
 
 def update_values(default: dict, others: dict):
     for key in default.keys():
@@ -90,21 +92,34 @@ class Requests:
             'timeout': timeout
         }
 
+    def _check_http_is_200(self, response):
+        if response.status_code != 200:
+            # 正常情况下不会返回非 200 响应码
+            logger.error(f'Request WeCom error: '
+                         f'status_code={response.status_code} '
+                         f'\ncontent={response.content}')
+            raise WeComError
+
     def get(self, url, params=None, **kwargs):
+        kwargs['params'] = params
+        data = self.request('get', url, **kwargs)
+        return data
+
+    def request(self, method, url, **kwargs):
         try:
             set_default(kwargs, self._request_kwargs)
-            return requests.get(url, params=params, **kwargs)
+            response = getattr(requests, method)(url, **kwargs)
+            self._check_http_is_200(response)
+            return response.json()
         except ReadTimeout as e:
             logger.exception(e)
             raise NetError
 
     def post(self, url, data=None, json=None, **kwargs):
-        try:
-            set_default(kwargs, self._request_kwargs)
-            return requests.post(url, data=data, json=json, **kwargs)
-        except ReadTimeout as e:
-            logger.exception(e)
-            raise NetError
+        kwargs['data'] = data
+        kwargs['json'] = json
+        data = self.request('get', url, **kwargs)
+        return data
 
 
 class WeCom:
@@ -118,7 +133,7 @@ class WeCom:
         self._agentid = agentid
 
         self._requests = Requests(timeout=timeout)
-        self._init_access_token()
+        self._set_access_token()
 
     def _check_http_is_200(self, response):
         if response.status_code != 200:
@@ -138,7 +153,7 @@ class WeCom:
                          f'errmsg={errmsg} ')
             raise WeComError
 
-    def _init_access_token(self):
+    def _set_access_token(self):
         self._access_token_cache_key = digest(self._corpid, self._corpsecret)
 
         access_token = cache.get(self._access_token_cache_key)
@@ -146,12 +161,13 @@ class WeCom:
             self._access_token = access_token
             return
 
+        self._init_access_token()
+
+    def _init_access_token(self):
         # 缓存中没有 access_token ，去企业微信请求
         params = {'corpid': self._corpid, 'corpsecret': self._corpsecret}
-        response = self._requests.get(url=URL.GET_TOKEN, params=params)
-        self._check_http_is_200(response)
+        data = self._requests.get(url=URL.GET_TOKEN, params=params)
 
-        data = DictWrapper(response.json())
         self._check_errcode_is_0(data)
 
         # 请求成功了
@@ -208,16 +224,26 @@ class WeCom:
         invalid_users = invaliduser.split('|')
         return invalid_users
 
+    def request_get(self, url, params: dict = None):
+        for i in range(3):
+            params = params or {}
+            params['access_token'] = self._access_token
+            data = self._requests.get(URL.GET_USER_ID_BY_CODE, params)
+            errcode = data['errcode']
+            if errcode == ErrorCode.INVALID_TOKEN:
+                self._init_access_token()
+                continue
+            return data
+        logger.error(f'WeCom access_token retry 3 times failed, check your config')
+        raise WeComError
+
     def get_user_id_by_code(self, code):
         # # https://open.work.weixin.qq.com/api/doc/90000/90135/91437
 
         params = {
-            'access_token': self._access_token,
             'code': code,
         }
-        response = self._requests.get(URL.GET_USER_ID_BY_CODE, params)
-        self._check_http_is_200(response)
-        data = DictWrapper(response.json())
+        data = self.request_get(URL.GET_USER_ID_BY_CODE, params=params)
 
         errcode = data['errcode']
         if errcode == ErrorCode.INVALID_CODE:
@@ -241,10 +267,8 @@ class WeCom:
         # https://open.work.weixin.qq.com/api/doc/90000/90135/90196
 
         params = {
-            'access_token': self._access_token,
             'userid': id,
         }
 
-        response = self._requests.get(URL.GET_USER_DETAIL, params)
-        self._check_http_is_200(response)
-        data = DictWrapper(response.json())
+        data = self.request_get(URL.GET_USER_DETAIL, params)
+        return data
