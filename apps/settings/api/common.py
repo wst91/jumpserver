@@ -124,7 +124,8 @@ class PublicSettingApi(generics.RetrieveAPIView):
                     'SECURITY_PASSWORD_LOWER_CASE': settings.SECURITY_PASSWORD_LOWER_CASE,
                     'SECURITY_PASSWORD_NUMBER': settings.SECURITY_PASSWORD_NUMBER,
                     'SECURITY_PASSWORD_SPECIAL_CHAR': settings.SECURITY_PASSWORD_SPECIAL_CHAR,
-                }
+                },
+                "AUTH_WECOM": settings.AUTH_WECOM,
             }
         }
         return instance
