@@ -110,7 +110,8 @@ class Requests:
             set_default(kwargs, self._request_kwargs)
             response = getattr(requests, method)(url, **kwargs)
             self._check_http_is_200(response)
-            return response.json()
+            data = response.json()
+            return DictWrapper(data)
         except ReadTimeout as e:
             logger.exception(e)
             raise NetError
