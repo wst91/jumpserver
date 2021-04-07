@@ -147,6 +147,9 @@ class AuthMixin:
     def raise_credential_error(self, error):
         raise self.partial_credential_error(error=error)
 
+    def _set_partial_credential_error(self, username, ip, request):
+        self.partial_credential_error = partial(errors.CredentialError, username=username, ip=ip, request=request)
+
     def get_auth_data(self, decrypt_passwd=False):
         request = self.request
         if hasattr(request, 'data'):
@@ -158,7 +161,7 @@ class AuthMixin:
         username, password, challenge, public_key, auto_login = bulk_get(data, *items,  default='')
         password = password + challenge.strip()
         ip = self.get_request_ip()
-        self.partial_credential_error = partial(errors.CredentialError, username=username, ip=ip, request=request)
+        self._set_partial_credential_error(username=username, ip=ip, request=request)
 
         if decrypt_passwd:
             password = self.decrypt_passwd(password)
@@ -220,10 +223,16 @@ class AuthMixin:
         request.session['auth_backend'] = getattr(user, 'backend', settings.AUTH_BACKEND_MODEL)
         return user
 
+    def _check_is_local_user(self, user: User):
+        if user.source != User.Source.local:
+            raise self.raise_credential_error(error=errors.reason_wecom_login_only_for_local_user)
+
     def check_wecom_auth(self, user: User):
         ip = self.get_request_ip()
         request = self.request
 
+        self._set_partial_credential_error(user.username, ip, request)
+        self._check_is_local_user(user)
         self._check_is_block(user.username)
         self._check_login_acl(user, ip)
 

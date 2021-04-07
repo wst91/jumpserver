@@ -20,6 +20,7 @@ reason_user_invalid = 'user_invalid'
 reason_user_inactive = 'user_inactive'
 reason_backend_not_match = 'backend_not_match'
 reason_acl_not_allow = 'acl_not_allow'
+reason_wecom_login_only_for_local_user = 'wecom_login_only_for_local_user'
 
 reason_choices = {
     reason_password_failed: _('Username/password check failed'),
@@ -31,7 +32,8 @@ reason_choices = {
     reason_user_invalid: _('Disabled or expired'),
     reason_user_inactive: _("This account is inactive."),
     reason_backend_not_match: _("Auth backend not match"),
-    reason_acl_not_allow: _("ACL is not allowed")
+    reason_acl_not_allow: _("ACL is not allowed"),
+    reason_wecom_login_only_for_local_user: _("Wecom login only for local user")
 }
 old_reason_choices = {
     '0': '-',
