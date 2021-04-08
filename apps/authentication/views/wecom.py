@@ -77,7 +77,7 @@ class WeComQRMixin(PermissionsMixin, View):
         return response
 
 
-class WeComQRBindApi(WeComQRMixin, View):
+class WeComQRBindView(WeComQRMixin, View):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request: HttpRequest):
@@ -96,7 +96,7 @@ class WeComQRBindApi(WeComQRMixin, View):
         return HttpResponseRedirect(url)
 
 
-class WeComQRBindCallbackApi(WeComQRMixin, View):
+class WeComQRBindCallbackView(WeComQRMixin, View):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request: HttpRequest, user_id):
@@ -151,7 +151,7 @@ class WeComEnableStartView(UserVerifyPasswordView):
         return success_url
 
 
-class WeComQRLoginApi(WeComQRMixin, View):
+class WeComQRLoginView(WeComQRMixin, View):
     permission_classes = (AllowAny,)
 
     def get(self,  request: HttpRequest):
@@ -164,7 +164,7 @@ class WeComQRLoginApi(WeComQRMixin, View):
         return HttpResponseRedirect(url)
 
 
-class WeComQRLoginCallbackApi(AuthMixin, WeComQRMixin, View):
+class WeComQRLoginCallbackView(AuthMixin, WeComQRMixin, View):
     permission_classes = (AllowAny,)
 
     def get(self, request: HttpRequest):
